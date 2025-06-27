@@ -56,7 +56,7 @@ export default function EmergencyLocator() {
               <div className="bg-red-600 p-2 rounded-lg">
                 <Siren className="text-white h-5 w-5" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900">Siren Locator</h1>
+              <h1 className="text-xl font-bold text-gray-900">RescueReach</h1>
             </div>
             <div className="flex items-center space-x-4">
               {/* Connection Status */}
