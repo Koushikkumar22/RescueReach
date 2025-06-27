@@ -89,16 +89,35 @@ export default function EmergencyLocator() {
             onReportIncident={handleReportIncident}
           />
           
-          {/* Location Error */}
-          {locationError && (
-            <div className="absolute top-4 left-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg max-w-sm">
-              <div className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4" />
-                <span className="text-sm font-medium">Location access required</span>
+          {/* Location Status */}
+          <div className="absolute top-4 left-4 z-50">
+            {locationError ? (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg max-w-sm">
+                <div className="flex items-center space-x-2">
+                  <MapPin className="h-4 w-4" />
+                  <span className="text-sm font-medium">Location access required</span>
+                </div>
+                <p className="text-xs mt-1">Please enable location services for emergency features</p>
               </div>
-              <p className="text-xs mt-1">Please enable location services for emergency features</p>
-            </div>
-          )}
+            ) : location ? (
+              <div className="bg-blue-50 border border-blue-300 text-blue-800 px-4 py-3 rounded-lg shadow-lg">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium">Live location active</span>
+                </div>
+                <p className="text-xs mt-1">
+                  Your location: {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+                </p>
+              </div>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-3 rounded-lg shadow-lg">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-yellow-600 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium">Getting your location...</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Siren Controls Panel - Mobile Bottom Sheet / Desktop Sidebar */}

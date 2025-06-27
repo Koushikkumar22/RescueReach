@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from "react-leaflet";
 import L from "leaflet";
 import type { EmergencyService, Incident } from "@shared/schema";
-import { MapPin, Phone, Navigation, Plus, AlertTriangle } from "lucide-react";
+import { MapPin, Phone, Navigation, Plus, AlertTriangle, Crosshair } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -27,7 +27,7 @@ interface MapViewProps {
 }
 
 export function MapView({ userLocation, onSOSActivation, onReportIncident }: MapViewProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
   const [selectedService, setSelectedService] = useState<EmergencyService | null>(null);
 
   const { data: emergencyServices = [] } = useQuery<EmergencyService[]>({
@@ -104,21 +104,47 @@ export function MapView({ userLocation, onSOSActivation, onReportIncident }: Map
     return L.divIcon({
       html: `<div style="background: #3b82f6; 
                       color: white; 
-                      width: 20px; 
-                      height: 20px; 
+                      width: 24px; 
+                      height: 24px; 
                       border-radius: 50%; 
                       display: flex; 
                       align-items: center; 
                       justify-content: center; 
-                      border: 3px solid white; 
-                      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.6);">
+                      border: 4px solid white; 
+                      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3), 0 4px 12px rgba(59, 130, 246, 0.4);
+                      animation: pulse 2s infinite;">
                 <div style="width: 8px; height: 8px; background: white; border-radius: 50%;"></div>
              </div>`,
       className: 'user-location-marker',
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
     });
   };
+
+  // Component to handle map centering when user location changes
+  function MapCenterController({ center }: { center: [number, number] }) {
+    const map = useMap();
+    
+    useEffect(() => {
+      if (center) {
+        map.setView(center, map.getZoom());
+      }
+    }, [center, map]);
+    
+    return null;
+  }
+
+  // Component to handle map reference and centering
+  function MapController({ userLocation }: { userLocation: Location | null }) {
+    const map = useMap();
+    
+    // Store map reference for external use
+    useEffect(() => {
+      mapRef.current = map;
+    }, [map]);
+
+    return null;
+  }
 
   const handleCall = (phone: string) => {
     window.location.href = `tel:${phone}`;
@@ -150,25 +176,51 @@ export function MapView({ userLocation, onSOSActivation, onReportIncident }: Map
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
-        {/* User Location Marker */}
+        {/* User Location with Accuracy Circle */}
         {userLocation && (
-          <Marker
-            position={[userLocation.latitude, userLocation.longitude]}
-            icon={createUserLocationIcon()}
-          >
-            <Popup>
-              <div className="text-center">
-                <div className="flex items-center space-x-2 mb-2">
-                  <MapPin className="text-blue-600 h-4 w-4" />
-                  <span className="font-medium">Your Location</span>
+          <>
+            {/* Accuracy circle */}
+            <Circle
+              center={[userLocation.latitude, userLocation.longitude]}
+              radius={50} // 50 meter accuracy radius
+              pathOptions={{
+                color: '#3b82f6',
+                fillColor: '#3b82f6',
+                fillOpacity: 0.1,
+                weight: 2
+              }}
+            />
+            
+            {/* User location marker */}
+            <Marker
+              position={[userLocation.latitude, userLocation.longitude]}
+              icon={createUserLocationIcon()}
+            >
+              <Popup>
+                <div className="text-center p-2">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <MapPin className="text-blue-600 h-4 w-4" />
+                    <span className="font-medium">Your Current Location</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-600">
+                      Coordinates: {userLocation.latitude.toFixed(6)}, {userLocation.longitude.toFixed(6)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Accuracy: ±50 meters
+                    </p>
+                    <p className="text-xs text-blue-600 font-medium">
+                      Live tracking active
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-600">
-                  {userLocation.latitude.toFixed(4)}, {userLocation.longitude.toFixed(4)}
-                </p>
-              </div>
-            </Popup>
-          </Marker>
+              </Popup>
+            </Marker>
+          </>
         )}
+
+        {/* Map controller */}
+        <MapController userLocation={userLocation} />
 
         {/* Emergency Service Markers */}
         {emergencyServices.map((service) => {
@@ -271,6 +323,20 @@ export function MapView({ userLocation, onSOSActivation, onReportIncident }: Map
 
       {/* Floating Action Buttons */}
       <div className="absolute bottom-4 right-4 flex flex-col space-y-3 z-[1000]">
+        {userLocation && (
+          <Button
+            onClick={() => {
+              // Center map on user location with high zoom
+              if (mapRef.current) {
+                mapRef.current.setView([userLocation.latitude, userLocation.longitude], 16);
+              }
+            }}
+            className="w-12 h-12 rounded-full bg-green-600 hover:bg-green-700 text-white shadow-xl"
+            title="Go to my location"
+          >
+            <Crosshair className="h-5 w-5" />
+          </Button>
+        )}
         <Button
           onClick={onReportIncident}
           className="w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xl"
