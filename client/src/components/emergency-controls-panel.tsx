@@ -21,8 +21,30 @@ export function EmergencyControlsPanel({
   onReportIncident, 
   userLocation 
 }: EmergencyControlsPanelProps) {
-  const { data: emergencyServices = [] } = useQuery<EmergencyService[]>({
-    queryKey: ["/api/emergency-services"],
+  const { data: emergencyServices = [], isLoading: servicesLoading } = useQuery<EmergencyService[]>({
+    queryKey: ["/api/emergency-services", userLocation?.latitude, userLocation?.longitude],
+    queryFn: async () => {
+      if (userLocation) {
+        // Fetch real nearby services using user's location
+        const response = await fetch(
+          `/api/emergency-services?lat=${userLocation.latitude}&lon=${userLocation.longitude}&useReal=true`
+        );
+        if (!response.ok) {
+          throw new Error('Failed to fetch real emergency services');
+        }
+        return response.json();
+      } else {
+        // Fallback to default services if no location
+        const response = await fetch('/api/emergency-services');
+        if (!response.ok) {
+          throw new Error('Failed to fetch emergency services');
+        }
+        return response.json();
+      }
+    },
+    enabled: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   const { data: recentIncidents = [] } = useQuery<Incident[]>({
@@ -158,7 +180,15 @@ export function EmergencyControlsPanel({
         {/* Nearby Services */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Nearby Services</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">Nearby Services</CardTitle>
+              {userLocation && (
+                <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                  Real data
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {nearbyServices.length > 0 ? (
@@ -188,9 +218,18 @@ export function EmergencyControlsPanel({
                   </Button>
                 </div>
               ))
+            ) : servicesLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <div className="flex items-center space-x-3">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-sm text-gray-600">
+                    {userLocation ? 'Loading real nearby services...' : 'Loading emergency services...'}
+                  </span>
+                </div>
+              </div>
             ) : (
               <p className="text-sm text-gray-500 text-center py-4">
-                Loading emergency services...
+                No emergency services found nearby
               </p>
             )}
           </CardContent>

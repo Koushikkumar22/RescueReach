@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { overpassService } from "./overpass-service";
 import { insertIncidentSchema, insertSosAlertSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -8,9 +9,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Emergency Services routes
   app.get("/api/emergency-services", async (req, res) => {
     try {
+      const { lat, lon, useReal } = req.query;
+      
+      // If coordinates provided and real data requested, fetch from OpenStreetMap
+      if (lat && lon && useReal === 'true') {
+        const latitude = parseFloat(lat as string);
+        const longitude = parseFloat(lon as string);
+        
+        if (isNaN(latitude) || isNaN(longitude)) {
+          return res.status(400).json({ message: "Invalid coordinates provided" });
+        }
+        
+        const realServices = await overpassService.getNearbyEmergencyServices(latitude, longitude);
+        return res.json(realServices);
+      }
+      
+      // Default to stored services (fallback)
       const services = await storage.getEmergencyServices();
       res.json(services);
     } catch (error) {
+      console.error("Error fetching emergency services:", error);
       res.status(500).json({ message: "Failed to fetch emergency services" });
     }
   });

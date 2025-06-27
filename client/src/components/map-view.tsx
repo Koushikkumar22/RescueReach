@@ -30,8 +30,30 @@ export function MapView({ userLocation, onSOSActivation, onReportIncident }: Map
   const mapRef = useRef<L.Map | null>(null);
   const [selectedService, setSelectedService] = useState<EmergencyService | null>(null);
 
-  const { data: emergencyServices = [] } = useQuery<EmergencyService[]>({
-    queryKey: ["/api/emergency-services"],
+  const { data: emergencyServices = [], isLoading: servicesLoading, error: servicesError } = useQuery<EmergencyService[]>({
+    queryKey: ["/api/emergency-services", userLocation?.latitude, userLocation?.longitude],
+    queryFn: async () => {
+      if (userLocation) {
+        // Fetch real nearby services using user's location
+        const response = await fetch(
+          `/api/emergency-services?lat=${userLocation.latitude}&lon=${userLocation.longitude}&useReal=true`
+        );
+        if (!response.ok) {
+          throw new Error('Failed to fetch real emergency services');
+        }
+        return response.json();
+      } else {
+        // Fallback to default services if no location
+        const response = await fetch('/api/emergency-services');
+        if (!response.ok) {
+          throw new Error('Failed to fetch emergency services');
+        }
+        return response.json();
+      }
+    },
+    enabled: true, // Always enabled
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   const { data: incidents = [] } = useQuery<Incident[]>({
@@ -221,6 +243,27 @@ export function MapView({ userLocation, onSOSActivation, onReportIncident }: Map
 
         {/* Map controller */}
         <MapController userLocation={userLocation} />
+
+        {/* Loading indicator for services */}
+        {servicesLoading && userLocation && (
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg p-4 z-[1000]">
+            <div className="flex items-center space-x-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <span className="text-sm font-medium">Loading real emergency services...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Error state for services */}
+        {servicesError && (
+          <div className="absolute top-20 left-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg shadow-lg max-w-sm z-50">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="text-sm font-medium">Real services unavailable</span>
+            </div>
+            <p className="text-xs mt-1">Using fallback data. Check your connection.</p>
+          </div>
+        )}
 
         {/* Emergency Service Markers */}
         {emergencyServices.map((service) => {
