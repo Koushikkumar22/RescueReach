@@ -124,7 +124,7 @@ export function SosModal({ isOpen, onClose, userLocation }: SosModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-sm bg-white" hideCloseButton>
+      <DialogContent className="sm:max-w-sm bg-white emergency-modal">
         <div className="text-center p-6">
           {/* SOS Icon */}
           <div className="mb-6">

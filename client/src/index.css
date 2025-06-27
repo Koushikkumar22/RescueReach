@@ -104,6 +104,38 @@
   width: 100%;
 }
 
+/* Modal z-index fixes to appear above map */
+[data-radix-dialog-overlay] {
+  z-index: 1500 !important;
+}
+
+[data-radix-dialog-content] {
+  z-index: 2000 !important;
+}
+
+/* Ensure all dialog components appear above map */
+.fixed[role="dialog"] {
+  z-index: 2000 !important;
+}
+
+.fixed[data-state="open"] {
+  z-index: 2000 !important;
+}
+
+/* Emergency modal specific */
+.emergency-modal {
+  z-index: 2100 !important;
+}
+
+/* Map specific z-index */
+.leaflet-container {
+  z-index: 100;
+}
+
+.leaflet-control-container {
+  z-index: 800;
+}
+
 .leaflet-popup-content-wrapper {
   border-radius: 8px;
 }

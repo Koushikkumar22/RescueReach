@@ -8,6 +8,9 @@ RescueReach is a comprehensive emergency assistance locator application that pro
 - **2025-06-27**: Implemented live interactive map using Leaflet replacing static image background
 - **2025-06-27**: Added custom map markers for emergency services, incidents, and user location
 - **2025-06-27**: Integrated real-time map popups with service information and actions
+- **2025-06-27**: Enhanced current location display with pulsing marker and accuracy circle
+- **2025-06-27**: Added location status indicator and "My Location" button
+- **2025-06-27**: Fixed modal z-index layering to prevent map overlap issues
 
 ## Project Architecture
 
