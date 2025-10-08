@@ -57,7 +57,7 @@ export function SosModal({ isOpen, onClose, userLocation }: SosModalProps) {
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to activate SOS alert. Please try calling 911 directly.",
+        description: "Failed to activate SOS alert. Please try calling 112 directly.",
         variant: "destructive",
       });
     },
@@ -108,7 +108,7 @@ export function SosModal({ isOpen, onClose, userLocation }: SosModalProps) {
   };
 
   const handleEmergencyCall = () => {
-    window.location.href = "tel:911";
+    window.location.href = "tel:112";
   };
 
   const handleClose = () => {

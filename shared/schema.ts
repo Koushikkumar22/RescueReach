@@ -23,6 +23,7 @@ export const incidents = pgTable("incidents", {
   address: text("address"),
   reportedBy: text("reported_by").notNull(),
   status: text("status").notNull().default("reported"), // reported, acknowledged, in_progress, resolved
+  photoUrl: text("photo_url"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   resolvedAt: timestamp("resolved_at"),
 });

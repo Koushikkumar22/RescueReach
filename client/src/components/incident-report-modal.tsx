@@ -40,6 +40,7 @@ interface IncidentReportModalProps {
 
 const incidentFormSchema = insertIncidentSchema.extend({
   address: z.string().optional(),
+  photoUrl: z.string().optional(),
 });
 
 type IncidentFormData = z.infer<typeof incidentFormSchema>;
@@ -65,6 +66,8 @@ export function IncidentReportModal({
 }: IncidentReportModalProps) {
   const [selectedType, setSelectedType] = useState<string>("");
   const [selectedSeverity, setSelectedSeverity] = useState<string>("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -82,9 +85,39 @@ export function IncidentReportModal({
     },
   });
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "File too large",
+          description: "Please select a photo under 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview("");
+  };
+
   const createIncidentMutation = useMutation({
     mutationFn: async (data: IncidentFormData) => {
-      const response = await apiRequest("POST", "/api/incidents", data);
+      const dataWithPhoto = {
+        ...data,
+        photoUrl: photoPreview || undefined,
+      };
+      const response = await apiRequest("POST", "/api/incidents", dataWithPhoto);
       return response.json();
     },
     onSuccess: () => {
@@ -98,6 +131,7 @@ export function IncidentReportModal({
       form.reset();
       setSelectedType("");
       setSelectedSeverity("");
+      removePhoto();
     },
     onError: (error) => {
       toast({
@@ -243,16 +277,41 @@ export function IncidentReportModal({
               )}
             />
 
-            {/* Photo Upload Placeholder */}
+            {/* Photo Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Add Photo (Optional)
               </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-gray-400 transition-colors cursor-pointer">
-                <Camera className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600">Tap to add photo</p>
-                <p className="text-xs text-gray-500 mt-1">Feature coming soon</p>
-              </div>
+              {photoPreview ? (
+                <div className="relative border-2 border-gray-300 rounded-xl p-2">
+                  <img 
+                    src={photoPreview} 
+                    alt="Preview" 
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={removePhoto}
+                    className="absolute top-4 right-4 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <label className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-gray-400 transition-colors cursor-pointer block">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                  />
+                  <Camera className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600">Tap to add photo</p>
+                  <p className="text-xs text-gray-500 mt-1">Max 5MB (JPG, PNG)</p>
+                </label>
+              )}
             </div>
 
             {/* Current Location Display */}

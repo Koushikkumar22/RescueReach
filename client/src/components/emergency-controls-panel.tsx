@@ -117,8 +117,8 @@ export function EmergencyControlsPanel({
     }
   };
 
-  const handleCall911 = () => {
-    window.location.href = "tel:911";
+  const handleCall112 = () => {
+    window.location.href = "tel:112";
   };
 
   const handleDirectionsToService = (service: EmergencyService) => {
@@ -169,11 +169,11 @@ export function EmergencyControlsPanel({
             <span className="font-medium text-sm">Report Incident</span>
           </Button>
           <Button
-            onClick={handleCall911}
+            onClick={handleCall112}
             className="flex flex-col items-center p-4 bg-green-600 hover:bg-green-700 text-white rounded-xl h-20"
           >
             <Phone className="h-6 w-6 mb-2" />
-            <span className="font-medium text-sm">Call 911</span>
+            <span className="font-medium text-sm">Call 112</span>
           </Button>
         </div>
 
