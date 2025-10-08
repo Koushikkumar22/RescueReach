@@ -147,6 +147,16 @@ export default function EmergencyLocator() {
         userLocation={location}
       />
 
+      {/* Floating SOS Button */}
+      <button
+        onClick={handleSOSActivation}
+        className="fixed bottom-8 left-8 z-[1000] w-20 h-20 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-2xl emergency-pulse hover:scale-110 transition-all duration-200 flex flex-col items-center justify-center group"
+        title="Emergency SOS"
+      >
+        <Siren className="h-8 w-8 mb-1 group-hover:animate-bounce" />
+        <span className="text-xs font-bold">SOS</span>
+      </button>
+
       {/* Notifications */}
       {notifications.map((notification) => (
         <NotificationToast

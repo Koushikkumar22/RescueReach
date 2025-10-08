@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,16 +11,22 @@ import { useToast } from "@/hooks/use-toast";
 export function EmergencyServicesDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [filterType, setFilterType] = useState<string>("all");
 
-  const { data: activeIncidents = [] } = useQuery<Incident[]>({
+  const { data: activeIncidents = [], isLoading: incidentsLoading } = useQuery<Incident[]>({
     queryKey: ["/api/incidents/active"],
     refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
   });
 
-  const { data: responseTeams = [] } = useQuery<ResponseTeam[]>({
+  const { data: responseTeams = [], isLoading: teamsLoading } = useQuery<ResponseTeam[]>({
     queryKey: ["/api/response-teams"],
     refetchInterval: 5000,
   });
+
+  // Filter incidents by type
+  const filteredIncidents = filterType === "all" 
+    ? activeIncidents 
+    : activeIncidents.filter(i => i.type === filterType);
 
   const updateIncidentStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
@@ -229,14 +236,60 @@ export function EmergencyServicesDashboard() {
         {/* Active Incidents */}
         <Card className="mb-8">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5" />
-              <span>Active Incidents ({activeIncidents.length})</span>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center space-x-2">
+                <AlertTriangle className="h-5 w-5" />
+                <span>Active Incidents ({filteredIncidents.length})</span>
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant={filterType === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterType("all")}
+                  className="text-xs"
+                >
+                  All
+                </Button>
+                <Button
+                  variant={filterType === "medical" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterType("medical")}
+                  className="text-xs"
+                >
+                  Medical
+                </Button>
+                <Button
+                  variant={filterType === "fire" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterType("fire")}
+                  className="text-xs"
+                >
+                  Fire
+                </Button>
+                <Button
+                  variant={filterType === "crime" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterType("crime")}
+                  className="text-xs"
+                >
+                  Crime
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {activeIncidents.length > 0 ? (
-              activeIncidents.map((incident) => (
+            {incidentsLoading ? (
+              <div className="space-y-4">
+                {[1, 2].map((i) => (
+                  <div key={i} className="border border-gray-200 rounded-xl p-4">
+                    <div className="skeleton h-6 w-3/4 mb-3"></div>
+                    <div className="skeleton h-4 w-full mb-2"></div>
+                    <div className="skeleton h-4 w-2/3"></div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredIncidents.length > 0 ? (
+              filteredIncidents.map((incident) => (
                 <div
                   key={incident.id}
                   className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow"
