@@ -159,6 +159,12 @@ export function EmergencyServicesDashboard() {
     updateIncidentStatusMutation.mutate({ id: incidentId, status: "resolved" });
   };
 
+  // Calculate statistics
+  const totalIncidents = activeIncidents.length;
+  const highPriorityCount = activeIncidents.filter(i => i.severity === 'high').length;
+  const availableTeams = responseTeams.filter(t => t.status === 'available').length;
+  const busyTeams = responseTeams.filter(t => t.status === 'busy' || t.status === 'en_route').length;
+
   return (
     <div className="w-full h-full bg-white border-l shadow-xl overflow-y-auto">
       <div className="p-6">
@@ -167,6 +173,57 @@ export function EmergencyServicesDashboard() {
           <Badge className="bg-green-100 text-green-800 border-green-200">
             Active
           </Badge>
+        </div>
+
+        {/* Statistics Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-red-600 uppercase tracking-wide mb-1">Active Incidents</p>
+                  <p className="text-2xl font-bold text-red-900">{totalIncidents}</p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-red-400" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-orange-600 uppercase tracking-wide mb-1">High Priority</p>
+                  <p className="text-2xl font-bold text-orange-900">{highPriorityCount}</p>
+                </div>
+                <Flame className="h-8 w-8 text-orange-400" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-green-600 uppercase tracking-wide mb-1">Available Teams</p>
+                  <p className="text-2xl font-bold text-green-900">{availableTeams}</p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-400" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">Teams Deployed</p>
+                  <p className="text-2xl font-bold text-blue-900">{busyTeams}</p>
+                </div>
+                <Clock className="h-8 w-8 text-blue-400" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Active Incidents */}
