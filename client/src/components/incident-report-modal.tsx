@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -126,6 +127,9 @@ export function IncidentReportModal({
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto emergency-modal">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-gray-900">Report Incident</DialogTitle>
+          <DialogDescription>
+            Report an emergency incident to alert responders in your area.
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>

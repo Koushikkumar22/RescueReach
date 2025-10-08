@@ -5,6 +5,9 @@ import { apiRequest } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Phone, MapPin, X } from "lucide-react";
@@ -125,6 +128,10 @@ export function SosModal({ isOpen, onClose, userLocation }: SosModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-sm bg-white emergency-modal">
+        <DialogHeader className="sr-only">
+          <DialogTitle>SOS Emergency Alert</DialogTitle>
+          <DialogDescription>Emergency services notification and response timer</DialogDescription>
+        </DialogHeader>
         <div className="text-center p-6">
           {/* SOS Icon */}
           <div className="mb-6">
