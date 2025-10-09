@@ -4,6 +4,11 @@
 RescueReach is a comprehensive emergency assistance locator application that provides real-time emergency response coordination. The app features live location tracking, incident reporting, SOS alerts, and emergency services coordination with an interactive map interface.
 
 ## Recent Changes
+- **2025-10-09**: Configured app for Vercel deployment with vercel.json and deployment documentation
+- **2025-10-09**: Updated server to support dynamic PORT environment variable for deployment platforms
+- **2025-10-09**: Changed emergency call number from 911 to 112 across all components
+- **2025-10-09**: Implemented functional photo upload feature in incident reports with base64 encoding
+- **2025-10-09**: Added photo_url column to incidents table for image storage
 - **2025-06-27**: Changed application name from "Siren Locator" to "RescueReach"
 - **2025-06-27**: Implemented live interactive map using Leaflet replacing static image background
 - **2025-06-27**: Added custom map markers for emergency services, incidents, and user location
@@ -64,3 +69,17 @@ The application is fully functional with:
 - Custom Leaflet markers with emergency service icons
 - Proper CSS import order for Leaflet styling
 - In-memory storage for development (can be upgraded to PostgreSQL)
+- Server supports dynamic PORT for deployment flexibility (Replit uses 5000, Vercel uses dynamic)
+
+## Deployment
+The application is configured for deployment to Vercel:
+- **Configuration**: `vercel.json` with build and output settings
+- **Documentation**: Complete deployment guide in `DEPLOYMENT.md`
+- **Database**: PostgreSQL (Neon recommended for Vercel)
+- **Environment Variables Required**:
+  - `DATABASE_URL`: PostgreSQL connection string
+  - `NODE_ENV`: Set to "production"
+- **Build Command**: `npm run build`
+- **Start Command**: `npm start`
+
+See `DEPLOYMENT.md` for detailed deployment instructions.

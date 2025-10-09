@@ -1,0 +1,9 @@
+node_modules
+.replit
+.upm
+replit.nix
+.git
+.gitignore
+*.log
+.DS_Store
+tmp
