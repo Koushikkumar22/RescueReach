@@ -1,7 +1,11 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "outputDirectory": "dist/client"
+  "outputDirectory": "dist/public",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/dist/index.js" },
+    { "source": "/(.*)", "destination": "/dist/public/$1" }
+  ]
 }
+
