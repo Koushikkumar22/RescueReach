@@ -4,9 +4,6 @@
   "installCommand": "npm install --include=dev",
   "outputDirectory": "dist/public",
   
-  // Removed the 'functions' block that was causing the invalid runtime error.
-  
-  // *** CRUCIAL FIX: Use the 'builds' block to explicitly define the Node.js builder ***
   "builds": [
     {
       "src": "dist/index.js",
@@ -19,9 +16,7 @@
   ],
 
   "rewrites": [
-    // This rewrite now points to the function created by the 'builds' configuration.
     { "source": "/api/(.*)", "destination": "/dist/index.js" },
-    // Static file serving
     { "source": "/(.*)", "destination": "/dist/public/$1" }
   ],
   "headers": [
