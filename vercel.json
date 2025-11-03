@@ -1,37 +1,17 @@
 {
   "version": 2,
-  
-  // CRITICAL FIX 1: Run Drizzle's db:push command to ensure the PostgreSQL schema (tables) is created 
-  // before the application attempts to build its front end. This fixes the missing data error for SOS/Services.
   "buildCommand": "npm run db:push && npm run build",
-  
   "installCommand": "npm install --include=dev",
   "outputDirectory": "dist/public",
-  
-  "functions": {
-    // Defines the entry point for your Node.js serverless function
-    "server/index.ts": {
-      "maxDuration": 60,
-      "memory": 256
-    }
-  },
-
   "rewrites": [
-    // Reroutes all /api/* requests to your serverless function (server/index.ts)
-    { "source": "/api/(.*)", "destination": "/server/index.ts" },
-    
-    // Default route for static assets
+    { "source": "/api/(.*)", "destination": "/dist/index.js" },
     { "source": "/(.*)", "destination": "/dist/public/$1" }
   ],
-  
-  // CRITICAL FIX 2: Add CORS Headers to allow the static frontend (dist/public) to communicate 
-  // with the serverless backend (/api) without being blocked by the browser.
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" }, 
-        // Note: Using "*" is permissive. For high security, replace with your Vercel URL
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
         { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, OPTIONS" },
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Requested-With" },
         { "key": "Access-Control-Allow-Credentials", "value": "true" }
@@ -39,6 +19,3 @@
     }
   ]
 }
-
-
-
