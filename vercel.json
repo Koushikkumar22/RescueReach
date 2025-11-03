@@ -1,20 +1,9 @@
+
 {
   "version": 2,
   "buildCommand": "npm run db:push && npm run build",
   "installCommand": "npm install --include=dev",
   "outputDirectory": "dist/public",
-  
-  "builds": [
-    {
-      "src": "dist/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxDuration": 10,
-        "runtime": "nodejs20.x"
-      }
-    }
-  ],
-
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/dist/index.js" },
     { "source": "/(.*)", "destination": "/dist/public/$1" }
