@@ -4,14 +4,24 @@
   "installCommand": "npm install --include=dev",
   "outputDirectory": "dist/public",
   
-  "functions": {
-    "dist/index.js": {
-      "runtime": "nodejs20.x" 
+  // Removed the 'functions' block that was causing the invalid runtime error.
+  
+  // *** CRUCIAL FIX: Use the 'builds' block to explicitly define the Node.js builder ***
+  "builds": [
+    {
+      "src": "dist/index.js",
+      "use": "@vercel/node",
+      "config": {
+        "maxDuration": 10,
+        "runtime": "nodejs20.x"
+      }
     }
-  },
+  ],
 
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/index" },
+    // This rewrite now points to the function created by the 'builds' configuration.
+    { "source": "/api/(.*)", "destination": "/dist/index.js" },
+    // Static file serving
     { "source": "/(.*)", "destination": "/dist/public/$1" }
   ],
   "headers": [
