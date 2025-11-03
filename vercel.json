@@ -1,27 +1,34 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "server.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "vite.config.*",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+  "buildCommand": "npm run db:push && npm run build",
+  "installCommand": "npm install --include=dev",
+  "outputDirectory": "dist/public",
+  
+  // *** CRUCIAL FIX: Define the serverless function explicitly ***
+  // This tells Vercel: "The file 'dist/index.js' is our server function."
+  "functions": {
+    "dist/index.js": {
+      "runtime": "nodejs18.x" 
     }
+  },
+
+  "rewrites": [
+    // *** CRUCIAL FIX: Update destination to Vercel's function path ***
+    // This maps all /api/* requests to the newly defined /index function.
+    { "source": "/api/(.*)", "destination": "/index" },
+    
+    // Static file serving remains the same
+    { "source": "/(.*)", "destination": "/dist/public/$1" }
   ],
-  "routes": [
+  "headers": [
     {
-      "src": "/api/(.*)",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/dist/$1"
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Requested-With" },
+        { "key": "Access-Control-Allow-Credentials", "value": "true" }
+      ]
     }
   ]
 }
-
