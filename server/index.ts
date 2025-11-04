@@ -1,14 +1,16 @@
 import express, { type Request, Response, NextFunction } from "express";
+import { createServer } from "http";
+import { log } from "./vite";
 import { registerRoutes } from "./routes";
-import { serveStatic, log } from "./vite";
 
 const app = express();
+const server = createServer(app);
 
-// Middleware: JSON + URL-encoded parsing
+// ✅ Middleware: JSON + URL-encoded parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Logging middleware
+// ✅ Logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -37,22 +39,30 @@ app.use((req, res, next) => {
 (async () => {
   await registerRoutes(app);
 
-  // Global error handler
+  // ✅ Conditional import for dev / prod
+  if (process.env.NODE_ENV === "development") {
+    const { setupVite } = await import("./vite.js");
+    await setupVite(app, server);
+  } else {
+    const { serveStatic } = await import("./vite.js");
+    serveStatic(app);
+  }
+
+  // ✅ Global error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
     res.status(status).json({ message });
   });
 
-  if (process.env.VERCEL) {
-    // On Vercel, export app for the serverless function
-    serveStatic(app);
-  } else {
-    // Local development
+  if (!process.env.VERCEL) {
+    // ✅ Only listen locally — not on Vercel
     const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
-    app.listen(port, "0.0.0.0", () => log(`Serving on port ${port}`));
+    server.listen(port, "0.0.0.0", () =>
+      log(`🚀 Server running on port ${port}`)
+    );
   }
 })();
 
-// ✅ Export for Vercel (it imports this as a handler)
+// ✅ Export Express app for Vercel
 export default app;
