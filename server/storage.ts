@@ -117,9 +117,14 @@ export class MemStorage implements IStorage {
       }
     ];
 
+    // ✅ FIX: Ensure `isActive` is always defined as boolean
     services.forEach(service => {
       const id = this.currentId++;
-      this.emergencyServices.set(id, { ...service, id });
+      this.emergencyServices.set(id, {
+        ...service,
+        id,
+        isActive: service.isActive ?? true
+      });
     });
 
     // Seed response teams
@@ -172,7 +177,11 @@ export class MemStorage implements IStorage {
 
   async createEmergencyService(insertService: InsertEmergencyService): Promise<EmergencyService> {
     const id = this.currentId++;
-    const service: EmergencyService = { ...insertService, id };
+    const service: EmergencyService = {
+      ...insertService,
+      id,
+      isActive: insertService.isActive ?? true
+    };
     this.emergencyServices.set(id, service);
     return service;
   }
@@ -235,7 +244,7 @@ export class MemStorage implements IStorage {
       id,
       createdAt: new Date(),
       deactivatedAt: null,
-      isActive: insertAlert.isActive ?? true // ✅ ensure always boolean
+      isActive: insertAlert.isActive ?? true
     };
     this.sosAlerts.set(id, alert);
     return alert;
@@ -275,8 +284,8 @@ export class MemStorage implements IStorage {
     const team = this.responseTeams.get(id);
     if (team) {
       team.status = status;
-      team.latitude = latitude ?? team.latitude ?? null;   // ✅ normalize undefined
-      team.longitude = longitude ?? team.longitude ?? null; // ✅ normalize undefined
+      team.latitude = latitude ?? team.latitude ?? null;
+      team.longitude = longitude ?? team.longitude ?? null;
       this.responseTeams.set(id, team);
       return team;
     }
