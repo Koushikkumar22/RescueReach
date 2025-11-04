@@ -26,46 +26,36 @@ interface OverpassResponse {
   elements: OverpassElement[];
 }
 
-// Define the fallback URL and read the URL from environment variables
-// This is the fix for Vercel deployment where the public URL is often blocked/throttled.
-const FALLBACK_OVERPASS_URL = 'https://overpass.private.coffee/api/interpreter';
-const OVERPASS_BASE_URL = process.env.OVERPASS_API_URL || FALLBACK_OVERPASS_URL;
-
 export class OverpassService {
-  private readonly baseUrl = OVERPASS_BASE_URL;
-
+  private readonly baseUrl = 'https://overpass-api.de/api/interpreter';
+  
   async getNearbyEmergencyServices(latitude: number, longitude: number, radiusMeters: number = 10000): Promise<EmergencyService[]> {
     const query = this.buildOverpassQuery(latitude, longitude, radiusMeters);
-
+    
     try {
       const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        // The data body includes the Overpass query, which is URL-encoded
         body: `data=${encodeURIComponent(query)}`,
       });
 
       if (!response.ok) {
-        // Log the exact error status received from the Overpass mirror
-        console.error(`Overpass API request failed. Status: ${response.status}. URL: ${this.baseUrl}`);
-        throw new Error(`Overpass API request failed: ${response.status} from ${this.baseUrl}`);
+        throw new Error(`Overpass API request failed: ${response.status}`);
       }
 
       const data: OverpassResponse = await response.json();
       return this.processOverpassData(data.elements);
     } catch (error) {
       console.error('Error fetching emergency services from Overpass API:', error);
-      // Re-throw the error to be handled by the Express route/client
       throw error;
     }
   }
 
   private buildOverpassQuery(latitude: number, longitude: number, radiusMeters: number): string {
-    // Increased timeout to 60 seconds (up from 25) to prevent Vercel function timeout
     return `
-      [out:json][timeout:60];
+      [out:json][timeout:25];
       (
         node[amenity=hospital](around:${radiusMeters},${latitude},${longitude});
         node[amenity=clinic](around:${radiusMeters},${latitude},${longitude});
@@ -99,7 +89,7 @@ export class OverpassService {
 
   private convertElementToService(element: OverpassElement, id: number): EmergencyService | null {
     const { tags, lat, lon } = element;
-
+    
     // Skip elements without a name
     if (!tags.name) {
       return null;
@@ -148,7 +138,7 @@ export class OverpassService {
 
   private buildAddress(tags: any): string | null {
     const parts: string[] = [];
-
+    
     if (tags['addr:housenumber']) {
       parts.push(tags['addr:housenumber']);
     }
