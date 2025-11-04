@@ -1,7 +1,7 @@
 import express from "express";
 import { createServer } from "http";
 import { registerRoutes } from "./routes.js";
-import { log } from "./vite.js";
+import { log } from "./logger.js"; // ✅ safe standalone logger
 
 const app = express();
 const server = createServer(app);
@@ -9,7 +9,7 @@ const server = createServer(app);
 (async () => {
   await registerRoutes(app);
 
-  // ✅ Only import vite in development
+  // ✅ Dynamically load vite only in dev
   if (process.env.NODE_ENV === "development") {
     const { setupVite } = await import("./vite.js");
     await setupVite(app, server);
@@ -19,11 +19,10 @@ const server = createServer(app);
     serveStatic(app);
   }
 
-  // ✅ Error handler
+  // ✅ Centralized error handler
   app.use((err: any, _req, res, _next) => {
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    res.status(status).json({ message });
+    res.status(status).json({ message: err.message || "Internal Server Error" });
   });
 
   // ✅ Only listen when NOT on Vercel
