@@ -3,6 +3,8 @@ import { registerRoutes } from "./routes";
 import { serveStatic, log } from "./vite";
 
 const app = express();
+
+// Middleware: JSON + URL-encoded parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -22,7 +24,8 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      if (capturedJsonResponse)
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       if (logLine.length > 80) logLine = logLine.slice(0, 79) + "…";
       log(logLine);
     }
@@ -42,14 +45,14 @@ app.use((req, res, next) => {
   });
 
   if (process.env.VERCEL) {
-    // ✅ On Vercel, just export the app — no listening
+    // On Vercel, export app for the serverless function
     serveStatic(app);
   } else {
-    // ✅ Local development server
+    // Local development
     const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
     app.listen(port, "0.0.0.0", () => log(`Serving on port ${port}`));
   }
 })();
 
-// ✅ Required by Vercel for @vercel/node
+// ✅ Export for Vercel (it imports this as a handler)
 export default app;
