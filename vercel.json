@@ -4,7 +4,7 @@
   "installCommand": "npm install --include=dev",
   "outputDirectory": "dist/public",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/dist/index.js" },
+    { "source": "/api/(.*)", "destination": "/api/server.js" },
     { "source": "/(.*)", "destination": "/dist/public/$1" }
   ]
 }
