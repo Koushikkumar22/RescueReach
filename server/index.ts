@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { serveStatic, log } from "./vite"; // keep setupVite only for dev
+import { serveStatic, log } from "./vite";
 
 const app = express();
 app.use(express.json());
@@ -25,10 +25,7 @@ app.use((req, res, next) => {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
 
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
+      if (logLine.length > 80) logLine = logLine.slice(0, 79) + "…";
       log(logLine);
     }
   });
@@ -46,13 +43,14 @@ app.use((req, res, next) => {
   });
 
   if (process.env.VERCEL) {
-    // For Vercel, don't listen — just export app
+    // ✅ On Vercel — export for serverless function
     serveStatic(app);
   } else {
-    // Local dev
+    // ✅ Local development mode
     const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
     app.listen(port, () => log(`serving on port ${port}`));
   }
 })();
 
+// ✅ Required by Vercel for @vercel/node
 export default app;
