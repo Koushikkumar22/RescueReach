@@ -1,15 +1,15 @@
-import { 
-  emergencyServices, 
-  incidents, 
-  sosAlerts, 
+import {
+  emergencyServices,
+  incidents,
+  sosAlerts,
   responseTeams,
-  type EmergencyService, 
+  type EmergencyService,
   type InsertEmergencyService,
-  type Incident, 
+  type Incident,
   type InsertIncident,
-  type SosAlert, 
+  type SosAlert,
   type InsertSosAlert,
-  type ResponseTeam, 
+  type ResponseTeam,
   type InsertResponseTeam
 } from "@shared/schema";
 
@@ -18,23 +18,28 @@ export interface IStorage {
   getEmergencyServices(): Promise<EmergencyService[]>;
   getEmergencyServicesByType(type: string): Promise<EmergencyService[]>;
   createEmergencyService(service: InsertEmergencyService): Promise<EmergencyService>;
-  
+
   // Incidents
   getIncidents(): Promise<Incident[]>;
   getActiveIncidents(): Promise<Incident[]>;
   getIncident(id: number): Promise<Incident | undefined>;
   createIncident(incident: InsertIncident): Promise<Incident>;
   updateIncidentStatus(id: number, status: string): Promise<Incident | undefined>;
-  
+
   // SOS Alerts
   getActiveSosAlerts(): Promise<SosAlert[]>;
   createSosAlert(alert: InsertSosAlert): Promise<SosAlert>;
   deactivateSosAlert(id: number): Promise<SosAlert | undefined>;
-  
+
   // Response Teams
   getResponseTeams(): Promise<ResponseTeam[]>;
   getAvailableResponseTeams(): Promise<ResponseTeam[]>;
-  updateResponseTeamStatus(id: number, status: string, latitude?: string, longitude?: string): Promise<ResponseTeam | undefined>;
+  updateResponseTeamStatus(
+    id: number,
+    status: string,
+    latitude?: string,
+    longitude?: string
+  ): Promise<ResponseTeam | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -151,7 +156,10 @@ export class MemStorage implements IStorage {
     });
   }
 
+  // =====================
   // Emergency Services
+  // =====================
+
   async getEmergencyServices(): Promise<EmergencyService[]> {
     return Array.from(this.emergencyServices.values()).filter(service => service.isActive);
   }
@@ -169,7 +177,10 @@ export class MemStorage implements IStorage {
     return service;
   }
 
+  // =====================
   // Incidents
+  // =====================
+
   async getIncidents(): Promise<Incident[]> {
     return Array.from(this.incidents.values());
   }
@@ -209,7 +220,10 @@ export class MemStorage implements IStorage {
     return undefined;
   }
 
+  // =====================
   // SOS Alerts
+  // =====================
+
   async getActiveSosAlerts(): Promise<SosAlert[]> {
     return Array.from(this.sosAlerts.values()).filter(alert => alert.isActive);
   }
@@ -220,7 +234,8 @@ export class MemStorage implements IStorage {
       ...insertAlert,
       id,
       createdAt: new Date(),
-      deactivatedAt: null
+      deactivatedAt: null,
+      isActive: insertAlert.isActive ?? true // ✅ ensure always boolean
     };
     this.sosAlerts.set(id, alert);
     return alert;
@@ -237,7 +252,10 @@ export class MemStorage implements IStorage {
     return undefined;
   }
 
+  // =====================
   // Response Teams
+  // =====================
+
   async getResponseTeams(): Promise<ResponseTeam[]> {
     return Array.from(this.responseTeams.values());
   }
@@ -249,16 +267,16 @@ export class MemStorage implements IStorage {
   }
 
   async updateResponseTeamStatus(
-    id: number, 
-    status: string, 
-    latitude?: string, 
+    id: number,
+    status: string,
+    latitude?: string,
     longitude?: string
   ): Promise<ResponseTeam | undefined> {
     const team = this.responseTeams.get(id);
     if (team) {
       team.status = status;
-      if (latitude) team.latitude = latitude;
-      if (longitude) team.longitude = longitude;
+      team.latitude = latitude ?? team.latitude ?? null;   // ✅ normalize undefined
+      team.longitude = longitude ?? team.longitude ?? null; // ✅ normalize undefined
       this.responseTeams.set(id, team);
       return team;
     }
