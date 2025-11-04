@@ -117,7 +117,7 @@ export class MemStorage implements IStorage {
       }
     ];
 
-    // ✅ FIX: Ensure `isActive` is always defined as boolean
+    // ✅ FIX: Ensure isActive is always a boolean
     services.forEach(service => {
       const id = this.currentId++;
       this.emergencyServices.set(id, {
@@ -155,9 +155,17 @@ export class MemStorage implements IStorage {
       }
     ];
 
+    // ✅ FIX: Normalize all possibly undefined fields
     teams.forEach(team => {
       const id = this.currentId++;
-      this.responseTeams.set(id, { ...team, id });
+      this.responseTeams.set(id, {
+        ...team,
+        id,
+        latitude: team.latitude ?? null,
+        longitude: team.longitude ?? null,
+        status: team.status ?? "available",
+        assignedIncidentId: team.assignedIncidentId ?? null
+      });
     });
   }
 
@@ -210,7 +218,12 @@ export class MemStorage implements IStorage {
       ...insertIncident,
       id,
       createdAt: new Date(),
-      resolvedAt: null
+      resolvedAt: null,
+      address: insertIncident.address ?? null,
+      description: insertIncident.description ?? null,
+      photoUrl: insertIncident.photoUrl ?? null,
+      status: insertIncident.status ?? "reported",
+      severity: insertIncident.severity ?? "medium"
     };
     this.incidents.set(id, incident);
     return incident;
