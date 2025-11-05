@@ -1,3 +1,4 @@
+import { db } from "./db"; // make sure you have db.ts exporting drizzle(dbClient)
 import {
   emergencyServices,
   incidents,
@@ -10,8 +11,9 @@ import {
   type SosAlert,
   type InsertSosAlert,
   type ResponseTeam,
-  type InsertResponseTeam
+  type InsertResponseTeam,
 } from "@shared/schema";
+import { eq, ne } from "drizzle-orm";
 
 export interface IStorage {
   // Emergency Services
@@ -42,156 +44,28 @@ export interface IStorage {
   ): Promise<ResponseTeam | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private emergencyServices: Map<number, EmergencyService>;
-  private incidents: Map<number, Incident>;
-  private sosAlerts: Map<number, SosAlert>;
-  private responseTeams: Map<number, ResponseTeam>;
-  private currentId: number;
-
-  constructor() {
-    this.emergencyServices = new Map();
-    this.incidents = new Map();
-    this.sosAlerts = new Map();
-    this.responseTeams = new Map();
-    this.currentId = 1;
-    this.seedData();
-  }
-
-  private seedData() {
-    // Seed emergency services
-    const services: InsertEmergencyService[] = [
-      {
-        name: "General Hospital",
-        type: "hospital",
-        latitude: "40.7138",
-        longitude: "-74.0070",
-        address: "123 Medical Center Dr",
-        phone: "555-0101",
-        isActive: true
-      },
-      {
-        name: "Police Station",
-        type: "police",
-        latitude: "40.7118",
-        longitude: "-74.0050",
-        address: "456 Safety Blvd",
-        phone: "555-0102",
-        isActive: true
-      },
-      {
-        name: "Fire Department",
-        type: "fire",
-        latitude: "40.7108",
-        longitude: "-74.0080",
-        address: "789 Fire Station Rd",
-        phone: "555-0103",
-        isActive: true
-      },
-      {
-        name: "Central Hospital",
-        type: "hospital",
-        latitude: "40.7158",
-        longitude: "-74.0040",
-        address: "321 Health Ave",
-        phone: "555-0104",
-        isActive: true
-      },
-      {
-        name: "North Police Precinct",
-        type: "police",
-        latitude: "40.7148",
-        longitude: "-74.0090",
-        address: "654 Law Enforcement Way",
-        phone: "555-0105",
-        isActive: true
-      },
-      {
-        name: "West Fire Station",
-        type: "fire",
-        latitude: "40.7098",
-        longitude: "-74.0060",
-        address: "987 Rescue Lane",
-        phone: "555-0106",
-        isActive: true
-      }
-    ];
-
-    // ✅ FIX: Ensure isActive is always a boolean
-    services.forEach(service => {
-      const id = this.currentId++;
-      this.emergencyServices.set(id, {
-        ...service,
-        id,
-        isActive: service.isActive ?? true
-      });
-    });
-
-    // Seed response teams
-    const teams: InsertResponseTeam[] = [
-      {
-        name: "Ambulance Unit 1",
-        type: "ambulance",
-        status: "available",
-        latitude: "40.7138",
-        longitude: "-74.0070",
-        assignedIncidentId: null
-      },
-      {
-        name: "Fire Truck 7",
-        type: "fire_truck",
-        status: "available",
-        latitude: "40.7108",
-        longitude: "-74.0080",
-        assignedIncidentId: null
-      },
-      {
-        name: "Patrol Unit 23",
-        type: "police_unit",
-        status: "available",
-        latitude: "40.7118",
-        longitude: "-74.0050",
-        assignedIncidentId: null
-      }
-    ];
-
-    // ✅ FIX: Normalize all possibly undefined fields
-    teams.forEach(team => {
-      const id = this.currentId++;
-      this.responseTeams.set(id, {
-        ...team,
-        id,
-        latitude: team.latitude ?? null,
-        longitude: team.longitude ?? null,
-        status: team.status ?? "available",
-        assignedIncidentId: team.assignedIncidentId ?? null
-      });
-    });
-  }
-
+export class DbStorage implements IStorage {
   // =====================
   // Emergency Services
   // =====================
 
   async getEmergencyServices(): Promise<EmergencyService[]> {
-    return Array.from(this.emergencyServices.values()).filter(service => service.isActive);
+    return await db
+      .select()
+      .from(emergencyServices)
+      .where(eq(emergencyServices.isActive, true));
   }
 
   async getEmergencyServicesByType(type: string): Promise<EmergencyService[]> {
-    return Array.from(this.emergencyServices.values()).filter(
-      service => service.type === type && service.isActive
-    );
+    return await db
+      .select()
+      .from(emergencyServices)
+      .where(eq(emergencyServices.type, type));
   }
 
-  async createEmergencyService(insertService: InsertEmergencyService): Promise<EmergencyService> {
-    const id = this.currentId++;
-    const service: EmergencyService = {
-      ...insertService,
-      id,
-      isActive: insertService.isActive ?? true
-    };
-    this.emergencyServices.set(id, service);
-    return service;
+  async createEmergencyService(service: InsertEmergencyService): Promise<EmergencyService> {
+    const [result] = await db.insert(emergencyServices).values(service).returning();
+    return result;
   }
 
   // =====================
@@ -199,47 +73,43 @@ export class MemStorage implements IStorage {
   // =====================
 
   async getIncidents(): Promise<Incident[]> {
-    return Array.from(this.incidents.values());
+    return await db.select().from(incidents);
   }
 
   async getActiveIncidents(): Promise<Incident[]> {
-    return Array.from(this.incidents.values()).filter(
-      incident => incident.status !== "resolved"
-    );
+    return await db
+      .select()
+      .from(incidents)
+      .where(ne(incidents.status, "resolved"));
   }
 
   async getIncident(id: number): Promise<Incident | undefined> {
-    return this.incidents.get(id);
+    const [result] = await db.select().from(incidents).where(eq(incidents.id, id));
+    return result;
   }
 
   async createIncident(insertIncident: InsertIncident): Promise<Incident> {
-    const id = this.currentId++;
-    const incident: Incident = {
-      ...insertIncident,
-      id,
-      createdAt: new Date(),
-      resolvedAt: null,
-      address: insertIncident.address ?? null,
-      description: insertIncident.description ?? null,
-      photoUrl: insertIncident.photoUrl ?? null,
-      status: insertIncident.status ?? "reported",
-      severity: insertIncident.severity ?? "medium"
-    };
-    this.incidents.set(id, incident);
+    const [incident] = await db
+      .insert(incidents)
+      .values({
+        ...insertIncident,
+        status: insertIncident.status ?? "reported",
+        createdAt: new Date(),
+      })
+      .returning();
     return incident;
   }
 
   async updateIncidentStatus(id: number, status: string): Promise<Incident | undefined> {
-    const incident = this.incidents.get(id);
-    if (incident) {
-      incident.status = status;
-      if (status === "resolved") {
-        incident.resolvedAt = new Date();
-      }
-      this.incidents.set(id, incident);
-      return incident;
-    }
-    return undefined;
+    const [updated] = await db
+      .update(incidents)
+      .set({
+        status,
+        resolvedAt: status === "resolved" ? new Date() : null,
+      })
+      .where(eq(incidents.id, id))
+      .returning();
+    return updated;
   }
 
   // =====================
@@ -247,31 +117,34 @@ export class MemStorage implements IStorage {
   // =====================
 
   async getActiveSosAlerts(): Promise<SosAlert[]> {
-    return Array.from(this.sosAlerts.values()).filter(alert => alert.isActive);
+    return await db
+      .select()
+      .from(sosAlerts)
+      .where(eq(sosAlerts.isActive, true));
   }
 
   async createSosAlert(insertAlert: InsertSosAlert): Promise<SosAlert> {
-    const id = this.currentId++;
-    const alert: SosAlert = {
-      ...insertAlert,
-      id,
-      createdAt: new Date(),
-      deactivatedAt: null,
-      isActive: insertAlert.isActive ?? true
-    };
-    this.sosAlerts.set(id, alert);
+    const [alert] = await db
+      .insert(sosAlerts)
+      .values({
+        ...insertAlert,
+        createdAt: new Date(),
+        isActive: insertAlert.isActive ?? true,
+      })
+      .returning();
     return alert;
   }
 
   async deactivateSosAlert(id: number): Promise<SosAlert | undefined> {
-    const alert = this.sosAlerts.get(id);
-    if (alert) {
-      alert.isActive = false;
-      alert.deactivatedAt = new Date();
-      this.sosAlerts.set(id, alert);
-      return alert;
-    }
-    return undefined;
+    const [updated] = await db
+      .update(sosAlerts)
+      .set({
+        isActive: false,
+        deactivatedAt: new Date(),
+      })
+      .where(eq(sosAlerts.id, id))
+      .returning();
+    return updated;
   }
 
   // =====================
@@ -279,13 +152,14 @@ export class MemStorage implements IStorage {
   // =====================
 
   async getResponseTeams(): Promise<ResponseTeam[]> {
-    return Array.from(this.responseTeams.values());
+    return await db.select().from(responseTeams);
   }
 
   async getAvailableResponseTeams(): Promise<ResponseTeam[]> {
-    return Array.from(this.responseTeams.values()).filter(
-      team => team.status === "available"
-    );
+    return await db
+      .select()
+      .from(responseTeams)
+      .where(eq(responseTeams.status, "available"));
   }
 
   async updateResponseTeamStatus(
@@ -294,16 +168,17 @@ export class MemStorage implements IStorage {
     latitude?: string,
     longitude?: string
   ): Promise<ResponseTeam | undefined> {
-    const team = this.responseTeams.get(id);
-    if (team) {
-      team.status = status;
-      team.latitude = latitude ?? team.latitude ?? null;
-      team.longitude = longitude ?? team.longitude ?? null;
-      this.responseTeams.set(id, team);
-      return team;
-    }
-    return undefined;
+    const [updated] = await db
+      .update(responseTeams)
+      .set({
+        status,
+        latitude: latitude ? parseFloat(latitude) : undefined,
+        longitude: longitude ? parseFloat(longitude) : undefined,
+      })
+      .where(eq(responseTeams.id, id))
+      .returning();
+    return updated;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DbStorage();
