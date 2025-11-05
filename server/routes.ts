@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage } from "./db-storage"; // ✅ UPDATED: use Neon PostgreSQL storage
 import { overpassService } from "./overpass-service";
 import { insertIncidentSchema, insertSosAlertSchema } from "@shared/schema";
 import { z } from "zod";
@@ -10,21 +10,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/emergency-services", async (req, res) => {
     try {
       const { lat, lon, useReal } = req.query;
-      
-      // If coordinates provided and real data requested, fetch from OpenStreetMap
-      if (lat && lon && useReal === 'true') {
+
+      if (lat && lon && useReal === "true") {
         const latitude = parseFloat(lat as string);
         const longitude = parseFloat(lon as string);
-        
+
         if (isNaN(latitude) || isNaN(longitude)) {
           return res.status(400).json({ message: "Invalid coordinates provided" });
         }
-        
+
         const realServices = await overpassService.getNearbyEmergencyServices(latitude, longitude);
         return res.json(realServices);
       }
-      
-      // Default to stored services (fallback)
+
       const services = await storage.getEmergencyServices();
       res.json(services);
     } catch (error) {
@@ -80,7 +78,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      
+
       if (!status) {
         return res.status(400).json({ message: "Status is required" });
       }
@@ -89,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!incident) {
         return res.status(404).json({ message: "Incident not found" });
       }
-      
+
       res.json(incident);
     } catch (error) {
       res.status(500).json({ message: "Failed to update incident status" });
@@ -124,11 +122,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const alert = await storage.deactivateSosAlert(parseInt(id));
-      
+
       if (!alert) {
         return res.status(404).json({ message: "SOS alert not found" });
       }
-      
+
       res.json(alert);
     } catch (error) {
       res.status(500).json({ message: "Failed to deactivate SOS alert" });
@@ -158,22 +156,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { status, latitude, longitude } = req.body;
-      
+
       if (!status) {
         return res.status(400).json({ message: "Status is required" });
       }
 
       const team = await storage.updateResponseTeamStatus(
-        parseInt(id), 
-        status, 
-        latitude, 
+        parseInt(id),
+        status,
+        latitude,
         longitude
       );
-      
+
       if (!team) {
         return res.status(404).json({ message: "Response team not found" });
       }
-      
+
       res.json(team);
     } catch (error) {
       res.status(500).json({ message: "Failed to update response team status" });
