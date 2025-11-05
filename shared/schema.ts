@@ -2,6 +2,8 @@ import { pgTable, text, serial, integer, boolean, timestamp, decimal } from "dri
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// ===================== TABLES =====================
+
 export const emergencyServices = pgTable("emergency_services", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -48,32 +50,50 @@ export const responseTeams = pgTable("response_teams", {
   assignedIncidentId: integer("assigned_incident_id"),
 });
 
-// Insert schemas
+// ===================== SCHEMAS =====================
+
+// 🚑 Emergency Services
 export const insertEmergencyServiceSchema = createInsertSchema(emergencyServices).omit({
   id: true,
 });
 
-export const insertIncidentSchema = createInsertSchema(incidents).omit({
-  id: true,
-  createdAt: true,
-  resolvedAt: true,
-}).extend({
-  type: z.enum(["medical", "fire", "crime", "accident"]),
-  severity: z.enum(["low", "medium", "high"]),
-  status: z.enum(["reported", "acknowledged", "in_progress", "resolved"]).optional(),
-});
+// 🚨 Incidents
+export const insertIncidentSchema = createInsertSchema(incidents)
+  .omit({
+    id: true,
+    createdAt: true,
+    resolvedAt: true,
+  })
+  .extend({
+    type: z.enum(["medical", "fire", "crime", "accident"]),
+    severity: z.enum(["low", "medium", "high"]),
+    status: z.enum(["reported", "acknowledged", "in_progress", "resolved"]).optional(),
 
-export const insertSosAlertSchema = createInsertSchema(sosAlerts).omit({
-  id: true,
-  createdAt: true,
-  deactivatedAt: true,
-});
+    // ✅ Accept both number or string for latitude/longitude, and normalize to string
+    latitude: z.union([z.string(), z.number()]).transform(String),
+    longitude: z.union([z.string(), z.number()]).transform(String),
+  });
 
+// 🆘 SOS Alerts
+export const insertSosAlertSchema = createInsertSchema(sosAlerts)
+  .omit({
+    id: true,
+    createdAt: true,
+    deactivatedAt: true,
+  })
+  .extend({
+    // ✅ Accept both string or number input
+    latitude: z.union([z.string(), z.number()]).transform(String),
+    longitude: z.union([z.string(), z.number()]).transform(String),
+  });
+
+// 🚒 Response Teams
 export const insertResponseTeamSchema = createInsertSchema(responseTeams).omit({
   id: true,
 });
 
-// Types
+// ===================== TYPES =====================
+
 export type EmergencyService = typeof emergencyServices.$inferSelect;
 export type InsertEmergencyService = z.infer<typeof insertEmergencyServiceSchema>;
 
