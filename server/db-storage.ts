@@ -51,7 +51,7 @@ export class DbStorage implements IStorage {
     return await db
       .select()
       .from(incidents)
-      .where(ne(incidents.status, "resolved")); // ✅ replaced `.not.eq()` with ne()
+      .where(ne(incidents.status, "resolved")); // ✅ Correct filter using ne()
   }
 
   async getIncident(id: number): Promise<Incident | undefined> {
