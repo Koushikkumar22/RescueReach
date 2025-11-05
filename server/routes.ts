@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./db-storage"; // ✅ UPDATED: use Neon PostgreSQL storage
+import { storage } from "./db-storage"; // ✅ using Neon PostgreSQL
 import { overpassService } from "./overpass-service";
 import { insertIncidentSchema, insertSosAlertSchema } from "@shared/schema";
 import { z } from "zod";
@@ -26,8 +26,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const services = await storage.getEmergencyServices();
       res.json(services);
     } catch (error) {
-      console.error("Error fetching emergency services:", error);
-      res.status(500).json({ message: "Failed to fetch emergency services" });
+      console.error("❌ Error fetching emergency services:", error);
+      res.status(500).json({ message: "Failed to fetch emergency services", error: (error as Error).message });
     }
   });
 
@@ -37,7 +37,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const services = await storage.getEmergencyServicesByType(type);
       res.json(services);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch emergency services by type" });
+      console.error("❌ Error fetching emergency services by type:", error);
+      res.status(500).json({ message: "Failed to fetch emergency services by type", error: (error as Error).message });
     }
   });
 
@@ -47,16 +48,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const incidents = await storage.getIncidents();
       res.json(incidents);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch incidents" });
+      console.error("❌ Error fetching incidents:", error);
+      res.status(500).json({ message: "Failed to fetch incidents", error: (error as Error).message });
     }
   });
 
+  // ✅ Step 1: Added detailed logging here
   app.get("/api/incidents/active", async (req, res) => {
     try {
       const incidents = await storage.getActiveIncidents();
       res.json(incidents);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch active incidents" });
+    } catch (err) {
+      console.error("❌ Error fetching active incidents:", err);
+      res.status(500).json({ message: "Server error", error: (err as Error).message });
     }
   });
 
@@ -69,7 +73,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid incident data", errors: error.errors });
       } else {
-        res.status(500).json({ message: "Failed to create incident" });
+        console.error("❌ Error creating incident:", error);
+        res.status(500).json({ message: "Failed to create incident", error: (error as Error).message });
       }
     }
   });
@@ -90,7 +95,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(incident);
     } catch (error) {
-      res.status(500).json({ message: "Failed to update incident status" });
+      console.error("❌ Error updating incident status:", error);
+      res.status(500).json({ message: "Failed to update incident status", error: (error as Error).message });
     }
   });
 
@@ -100,7 +106,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const alerts = await storage.getActiveSosAlerts();
       res.json(alerts);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch SOS alerts" });
+      console.error("❌ Error fetching SOS alerts:", error);
+      res.status(500).json({ message: "Failed to fetch SOS alerts", error: (error as Error).message });
     }
   });
 
@@ -113,7 +120,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid SOS alert data", errors: error.errors });
       } else {
-        res.status(500).json({ message: "Failed to create SOS alert" });
+        console.error("❌ Error creating SOS alert:", error);
+        res.status(500).json({ message: "Failed to create SOS alert", error: (error as Error).message });
       }
     }
   });
@@ -129,7 +137,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(alert);
     } catch (error) {
-      res.status(500).json({ message: "Failed to deactivate SOS alert" });
+      console.error("❌ Error deactivating SOS alert:", error);
+      res.status(500).json({ message: "Failed to deactivate SOS alert", error: (error as Error).message });
     }
   });
 
@@ -139,7 +148,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const teams = await storage.getResponseTeams();
       res.json(teams);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch response teams" });
+      console.error("❌ Error fetching response teams:", error);
+      res.status(500).json({ message: "Failed to fetch response teams", error: (error as Error).message });
     }
   });
 
@@ -148,7 +158,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const teams = await storage.getAvailableResponseTeams();
       res.json(teams);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch available response teams" });
+      console.error("❌ Error fetching available response teams:", error);
+      res.status(500).json({ message: "Failed to fetch available response teams", error: (error as Error).message });
     }
   });
 
@@ -174,7 +185,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(team);
     } catch (error) {
-      res.status(500).json({ message: "Failed to update response team status" });
+      console.error("❌ Error updating response team status:", error);
+      res.status(500).json({ message: "Failed to update response team status", error: (error as Error).message });
     }
   });
 
