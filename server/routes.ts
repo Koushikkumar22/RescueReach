@@ -6,7 +6,7 @@ import { insertIncidentSchema, insertSosAlertSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Emergency Services routes
+  // 🏥 Emergency Services routes
   app.get("/api/emergency-services", async (req, res) => {
     try {
       const { lat, lon, useReal } = req.query;
@@ -42,7 +42,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Incidents routes
+  // 🚨 Incidents routes
   app.get("/api/incidents", async (req, res) => {
     try {
       const incidents = await storage.getIncidents();
@@ -53,7 +53,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ✅ Step 1: Added detailed logging here
   app.get("/api/incidents/active", async (req, res) => {
     try {
       const incidents = await storage.getActiveIncidents();
@@ -64,18 +63,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ✅ --- POST /api/incidents (Updated) ---
   app.post("/api/incidents", async (req, res) => {
     try {
-      const validatedData = insertIncidentSchema.parse(req.body);
-      const incident = await storage.createIncident(validatedData);
-      res.status(201).json(incident);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: "Invalid incident data", errors: error.errors });
-      } else {
-        console.error("❌ Error creating incident:", error);
-        res.status(500).json({ message: "Failed to create incident", error: (error as Error).message });
-      }
+      const body = insertIncidentSchema.parse({
+        ...req.body,
+        latitude: Number(req.body.latitude),
+        longitude: Number(req.body.longitude),
+        reportedBy: req.body.reportedBy || "Anonymous",
+      });
+
+      const incident = await storage.createIncident(body);
+      res.json(incident);
+    } catch (err) {
+      console.error("❌ Failed to create incident:", err);
+      res.status(400).json({ error: "Invalid incident data", details: err });
     }
   });
 
@@ -100,7 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // SOS Alerts routes
+  // 🆘 SOS Alerts routes
   app.get("/api/sos-alerts", async (req, res) => {
     try {
       const alerts = await storage.getActiveSosAlerts();
@@ -111,18 +113,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ✅ --- POST /api/sos-alerts (Updated) ---
   app.post("/api/sos-alerts", async (req, res) => {
     try {
-      const validatedData = insertSosAlertSchema.parse(req.body);
-      const alert = await storage.createSosAlert(validatedData);
-      res.status(201).json(alert);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: "Invalid SOS alert data", errors: error.errors });
-      } else {
-        console.error("❌ Error creating SOS alert:", error);
-        res.status(500).json({ message: "Failed to create SOS alert", error: (error as Error).message });
-      }
+      const body = insertSosAlertSchema.parse({
+        ...req.body,
+        latitude: Number(req.body.latitude),
+        longitude: Number(req.body.longitude),
+        isActive: true,
+      });
+
+      const alert = await storage.createSosAlert(body);
+      res.json(alert);
+    } catch (err) {
+      console.error("❌ Failed to create SOS alert:", err);
+      res.status(400).json({ error: "Invalid SOS alert data", details: err });
     }
   });
 
@@ -142,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Response Teams routes
+  // 👥 Response Teams routes
   app.get("/api/response-teams", async (req, res) => {
     try {
       const teams = await storage.getResponseTeams();
