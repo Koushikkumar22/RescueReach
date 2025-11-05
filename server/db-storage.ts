@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { db } from "./db";
+import { eq, ne } from "drizzle-orm"; // ✅ Added: for filters (equals / not equals)
 import {
   emergencyServices,
   incidents,
@@ -33,7 +33,7 @@ export class DbStorage implements IStorage {
     return await db
       .select()
       .from(emergencyServices)
-      .where(emergencyServices.type.eq(type));
+      .where(eq(emergencyServices.type, type)); // ✅ use eq()
   }
 
   async createEmergencyService(service: InsertEmergencyService): Promise<EmergencyService> {
@@ -51,14 +51,14 @@ export class DbStorage implements IStorage {
     return await db
       .select()
       .from(incidents)
-      .where(incidents.status.not.eq("resolved"));
+      .where(ne(incidents.status, "resolved")); // ✅ replaced `.not.eq()` with ne()
   }
 
   async getIncident(id: number): Promise<Incident | undefined> {
     const [incident] = await db
       .select()
       .from(incidents)
-      .where(incidents.id.eq(id));
+      .where(eq(incidents.id, id)); // ✅ use eq()
     return incident;
   }
 
@@ -74,7 +74,7 @@ export class DbStorage implements IStorage {
         status,
         resolvedAt: status === "resolved" ? new Date() : null
       })
-      .where(incidents.id.eq(id))
+      .where(eq(incidents.id, id)) // ✅ use eq()
       .returning();
     return updated;
   }
@@ -85,7 +85,7 @@ export class DbStorage implements IStorage {
     return await db
       .select()
       .from(sosAlerts)
-      .where(sosAlerts.isActive.eq(true));
+      .where(eq(sosAlerts.isActive, true)); // ✅ use eq()
   }
 
   async createSosAlert(alert: InsertSosAlert): Promise<SosAlert> {
@@ -100,7 +100,7 @@ export class DbStorage implements IStorage {
         isActive: false,
         deactivatedAt: new Date()
       })
-      .where(sosAlerts.id.eq(id))
+      .where(eq(sosAlerts.id, id)) // ✅ use eq()
       .returning();
     return updated;
   }
@@ -115,7 +115,7 @@ export class DbStorage implements IStorage {
     return await db
       .select()
       .from(responseTeams)
-      .where(responseTeams.status.eq("available"));
+      .where(eq(responseTeams.status, "available")); // ✅ use eq()
   }
 
   async updateResponseTeamStatus(
@@ -131,7 +131,7 @@ export class DbStorage implements IStorage {
         latitude,
         longitude
       })
-      .where(responseTeams.id.eq(id))
+      .where(eq(responseTeams.id, id)) // ✅ use eq()
       .returning();
     return updated;
   }
