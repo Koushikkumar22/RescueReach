@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./db-storage"; // ✅ using Neon PostgreSQL
-import { overpassService } from "./overpass-service";
+import { overpassService, getAddressFromCoordinates } from "./overpass-service"; // ✅ added helper
 import { insertIncidentSchema, insertSosAlertSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -43,7 +43,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 🚨 Incidents routes
-  app.get("/api/incidents", async (req, res) => {
+  app.get("/api/incidents", async (_req, res) => {
     try {
       const incidents = await storage.getIncidents();
       res.json(incidents);
@@ -53,7 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/incidents/active", async (req, res) => {
+  app.get("/api/incidents/active", async (_req, res) => {
     try {
       const incidents = await storage.getActiveIncidents();
       res.json(incidents);
@@ -63,21 +63,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ✅ --- POST /api/incidents (Updated) ---
+  // ✅ --- POST /api/incidents (Enhanced with Reverse Geocoding) ---
   app.post("/api/incidents", async (req, res) => {
     try {
-      const body = insertIncidentSchema.parse({
+      const data = insertIncidentSchema.parse({
         ...req.body,
         latitude: Number(req.body.latitude),
         longitude: Number(req.body.longitude),
         reportedBy: req.body.reportedBy || "Anonymous",
       });
 
-      const incident = await storage.createIncident(body);
-      res.json(incident);
-    } catch (err) {
-      console.error("❌ Failed to create incident:", err);
-      res.status(400).json({ error: "Invalid incident data", details: err });
+      // ✅ Automatically fill address using reverse geocoding if not provided
+      let address = data.address;
+      if (!address && data.latitude && data.longitude) {
+        try {
+          address = await getAddressFromCoordinates(data.latitude, data.longitude);
+        } catch (geoError) {
+          console.warn("⚠️ Reverse geocoding failed:", geoError);
+          address = "Unknown location";
+        }
+      }
+
+      const incident = await storage.createIncident({
+        ...data,
+        address,
+      });
+
+      res.status(200).json(incident);
+    } catch (error) {
+      console.error("❌ Failed to create incident:", error);
+      res.status(400).json({ error: "Failed to create incident", details: (error as Error).message });
     }
   });
 
@@ -103,7 +118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 🆘 SOS Alerts routes
-  app.get("/api/sos-alerts", async (req, res) => {
+  app.get("/api/sos-alerts", async (_req, res) => {
     try {
       const alerts = await storage.getActiveSosAlerts();
       res.json(alerts);
@@ -113,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ✅ --- POST /api/sos-alerts (Updated) ---
+  // ✅ --- POST /api/sos-alerts ---
   app.post("/api/sos-alerts", async (req, res) => {
     try {
       const body = insertSosAlertSchema.parse({
@@ -148,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 👥 Response Teams routes
-  app.get("/api/response-teams", async (req, res) => {
+  app.get("/api/response-teams", async (_req, res) => {
     try {
       const teams = await storage.getResponseTeams();
       res.json(teams);
@@ -158,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/response-teams/available", async (req, res) => {
+  app.get("/api/response-teams/available", async (_req, res) => {
     try {
       const teams = await storage.getAvailableResponseTeams();
       res.json(teams);
