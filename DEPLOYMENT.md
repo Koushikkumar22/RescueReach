@@ -1,6 +1,6 @@
 # RescueReach - Vercel Deployment Guide
 
-This guide will help you deploy RescueReach to Vercel for production use.
+This guide will help you deploy RescueReach to Vercel for production usage.
 
 ## Prerequisites
 
