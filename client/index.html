@@ -2,12 +2,49 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+
+    <!-- ✅ Make page responsive on all screen sizes -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Responsive App</title>
+
+    <!-- Optional: Basic CSS reset to ensure scaling and layout consistency -->
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow-x: hidden;
+      }
+
+      #root {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      /* Optional: For demonstration, make content scale nicely */
+      @media (max-width: 768px) {
+        #root {
+          flex-direction: column;
+          padding: 1rem;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Your React entry point -->
     <script type="module" src="/src/main.tsx"></script>
-    <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
-    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
+
+    <!-- Replit dev banner -->
+    <script
+      type="text/javascript"
+      src="https://replit.com/public/js/replit-dev-banner.js"
+    ></script>
   </body>
 </html>
